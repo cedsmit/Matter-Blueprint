@@ -1,0 +1,14 @@
+matterblueprint.gui.blueprints=Blueprints
+matterblueprint.gui.save_quick=Opslaan
+matterblueprint.gui.load_quick=Laden
+matterblueprint.gui.no_blueprints=Geen opgeslagen blueprints
+matterblueprint.gui.more_blueprints=Meer... (%s/%s)
+matterblueprint.gui.lock=Vergrendelen
+matterblueprint.gui.unlock=Ontgrendelen
+matterblueprint.gui.edit=Bewerken
+matterblueprint.gui.paste_loaded=Plakken
+matterblueprint.gui.undo=Ongedaan maken
+matterblueprint.editor.title=Blueprint bewerken
+matterblueprint.editor.coordinate_a=Kopie A: %s, %s, %s
+matterblueprint.editor.coordinate_b=Kopie B: %s, %s, %s
+matterblueprint.editor.coordinate_c=Plak C: %s, %s, %s

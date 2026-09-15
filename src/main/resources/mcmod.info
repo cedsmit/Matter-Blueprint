@@ -1,0 +1,21 @@
+{
+	"modListVersion": 2,
+	"modList": [{
+		"modid": "${modId}",
+		"name": "${modName}",
+		"description": "A GTNH extension for Matter Manipulator that adds reusable building blueprints.",
+		"version": "${modVersion}",
+		"mcversion": "${minecraftVersion}",
+		"url": "https://github.com/cedsmit/Matter-Blueprint",
+		"updateUrl": "",
+		"authorList": ["Hydra"],
+		"credits": "Built for GT New Horizons as an extension for RecursivePineapple's Matter Manipulator.",
+		"logoFile": "",
+		"screenshots": [],
+		"parent": "",
+		"requiredMods": ["matter-manipulator"],
+		"dependencies": ["matter-manipulator"],
+		"dependants": [],
+		"useDependencyInformation": true
+	}]
+}

@@ -1,0 +1,14 @@
+matterblueprint.gui.blueprints=Blueprints
+matterblueprint.gui.save_quick=Save
+matterblueprint.gui.load_quick=Load
+matterblueprint.gui.no_blueprints=No saved blueprints
+matterblueprint.gui.more_blueprints=More... (%s/%s)
+matterblueprint.gui.lock=Lock
+matterblueprint.gui.unlock=Unlock
+matterblueprint.gui.edit=Edit
+matterblueprint.gui.paste_loaded=Paste
+matterblueprint.gui.undo=Undo
+matterblueprint.editor.title=Edit Blueprint
+matterblueprint.editor.coordinate_a=Copy A: %s, %s, %s
+matterblueprint.editor.coordinate_b=Copy B: %s, %s, %s
+matterblueprint.editor.coordinate_c=Paste C: %s, %s, %s

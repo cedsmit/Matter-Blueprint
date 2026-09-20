@@ -5,6 +5,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.StatCollector;
 
@@ -21,9 +22,12 @@ import com.gtnewhorizons.modularui.common.internal.wrapper.ModularUIContainer;
 import com.matterblueprint.client.ClientBlueprintLibrary;
 import com.matterblueprint.network.BlueprintNetwork;
 import com.recursive_pineapple.matter_manipulator.client.gui.RadialMenuBuilder;
+import com.recursive_pineapple.matter_manipulator.client.gui.RadialMenuBuilder.RadialMenuOptionBuilder;
 import com.recursive_pineapple.matter_manipulator.client.gui.RadialMenuBuilder.RadialMenuOptionBuilderBranch;
+import com.recursive_pineapple.matter_manipulator.client.gui.RadialMenuBuilder.RadialMenuOptionBuilderLeaf;
 import com.recursive_pineapple.matter_manipulator.common.items.manipulator.ItemMatterManipulator;
 import com.recursive_pineapple.matter_manipulator.common.items.manipulator.MMState;
+import com.recursive_pineapple.matter_manipulator.common.items.manipulator.MMState.PlaceMode;
 import com.recursive_pineapple.matter_manipulator.common.networking.Messages;
 
 import cpw.mods.fml.common.FMLCommonHandler;
@@ -37,19 +41,23 @@ public abstract class MixinItemMatterManipulator {
     @Inject(method = "addCommonOptions", at = @At("RETURN"))
     private void matterBlueprint$addBlueprintOptions(RadialMenuBuilder builder, UIBuildContext buildContext,
         MMState state, CallbackInfo callback) {
-        RadialMenuOptionBuilderBranch<RadialMenuBuilder> blueprintMenu = builder.branch()
-            .label(StatCollector.translateToLocal("matterblueprint.gui.blueprints"));
-        blueprintMenu.option()
+        matterBlueprint$addModeOption(builder, buildContext);
+
+        ItemStack held = buildContext.getPlayer()
+            .getHeldItem();
+        if (!ClientBlueprintLibrary.isBlueprintModeActive(buildContext.getPlayer(), held)) return;
+
+        builder.option()
             .label(StatCollector.translateToLocal("matterblueprint.gui.save_quick"))
             .onClicked(() -> ClientBlueprintLibrary.requestSave(QUICK_SLOT))
             .done();
 
-        RadialMenuOptionBuilderBranch<?> loadMenu = blueprintMenu.branch()
+        RadialMenuOptionBuilderBranch<?> loadMenu = builder.branch()
             .label(StatCollector.translateToLocal("matterblueprint.gui.load_quick"));
         matterBlueprint$addBlueprintPage(loadMenu, ClientBlueprintLibrary.getAvailableBlueprints(), 0);
         loadMenu.done();
 
-        blueprintMenu.option()
+        builder.option()
             .label(
                 StatCollector.translateToLocal(
                     state.config.coordC == null ? "matterblueprint.gui.lock" : "matterblueprint.gui.unlock"))
@@ -61,20 +69,108 @@ public abstract class MixinItemMatterManipulator {
                 }
             })
             .done();
-        blueprintMenu.option()
+        builder.option()
             .label(StatCollector.translateToLocal("matterblueprint.gui.edit"))
             .onClicked((menu, option, mouseButton, doubleClicked) -> matterBlueprint$openEditor(buildContext))
             .done();
-        blueprintMenu.option()
+        builder.option()
             .label(StatCollector.translateToLocal("matterblueprint.gui.paste_loaded"))
             .onClicked(ClientBlueprintLibrary::pasteLoaded)
             .done();
-        blueprintMenu.option()
+        builder.option()
             .label(StatCollector.translateToLocal("matterblueprint.gui.undo"))
             .hidden(!ClientBlueprintLibrary.hasUndo())
             .onClicked(BlueprintNetwork::requestUndo)
             .done();
-        blueprintMenu.done();
+    }
+
+    @Inject(method = "addGeometryOptions", at = @At("HEAD"), cancellable = true)
+    private void matterBlueprint$hideGeometryOptions(RadialMenuBuilder builder, UIBuildContext buildContext,
+        ItemStack held, MMState state, CallbackInfo callback) {
+        matterBlueprint$hideVanillaModeOptions(buildContext, held, callback);
+    }
+
+    @Inject(method = "addCopyingOptions", at = @At("HEAD"), cancellable = true)
+    private void matterBlueprint$hideCopyingOptions(RadialMenuBuilder builder, UIBuildContext buildContext,
+        ItemStack held, MMState state, CallbackInfo callback) {
+        matterBlueprint$hideVanillaModeOptions(buildContext, held, callback);
+    }
+
+    @Inject(method = "addMovingOptions", at = @At("HEAD"), cancellable = true)
+    private void matterBlueprint$hideMovingOptions(RadialMenuBuilder builder, UIBuildContext buildContext,
+        ItemStack held, MMState state, CallbackInfo callback) {
+        matterBlueprint$hideVanillaModeOptions(buildContext, held, callback);
+    }
+
+    @Inject(method = "addExchangingOptions", at = @At("HEAD"), cancellable = true)
+    private void matterBlueprint$hideExchangingOptions(RadialMenuBuilder builder, UIBuildContext buildContext,
+        ItemStack held, CallbackInfo callback) {
+        matterBlueprint$hideVanillaModeOptions(buildContext, held, callback);
+    }
+
+    @Inject(method = "addCableOptions", at = @At("HEAD"), cancellable = true)
+    private void matterBlueprint$hideCableOptions(RadialMenuBuilder builder, UIBuildContext buildContext,
+        ItemStack held, CallbackInfo callback) {
+        matterBlueprint$hideVanillaModeOptions(buildContext, held, callback);
+    }
+
+    private static void matterBlueprint$hideVanillaModeOptions(UIBuildContext buildContext, ItemStack held,
+        CallbackInfo callback) {
+        if (ClientBlueprintLibrary.isBlueprintModeActive(buildContext.getPlayer(), held)) callback.cancel();
+    }
+
+    private static void matterBlueprint$addModeOption(RadialMenuBuilder builder, UIBuildContext buildContext) {
+        RadialMenuOptionBuilderBranch<RadialMenuBuilder> setMode = matterBlueprint$findSetMode(builder);
+        if (setMode == null) return;
+
+        String geometry = StatCollector.translateToLocal("mm.gui.geometry");
+        String moving = StatCollector.translateToLocal("mm.gui.moving");
+        String copying = StatCollector.translateToLocal("mm.gui.copying");
+        String exchanging = StatCollector.translateToLocal("mm.gui.exchanging");
+        String cables = StatCollector.translateToLocal("mm.gui.cables");
+        int insertAt = setMode.children.size();
+
+        for (int index = 0; index < setMode.children.size(); index++) {
+            RadialMenuOptionBuilder<?> child = setMode.children.get(index);
+            String label = child.label.get();
+            if (geometry.equals(label)) insertAt = index + 1;
+            if (!(child instanceof RadialMenuOptionBuilderLeaf)) continue;
+            if (
+                !geometry.equals(label) && !moving.equals(label)
+                    && !copying.equals(label)
+                    && !exchanging.equals(label)
+                    && !cables.equals(label)
+            ) continue;
+
+            RadialMenuOptionBuilderLeaf<?> mode = (RadialMenuOptionBuilderLeaf<?>) child;
+            com.recursive_pineapple.matter_manipulator.client.gui.RadialMenu.RadialMenuClickHandler selectMode = mode.onClicked;
+            mode.onClicked = (menu, option, mouseButton, doubleClicked) -> {
+                ClientBlueprintLibrary.leaveBlueprintMode();
+                selectMode.onClick(menu, option, mouseButton, doubleClicked);
+            };
+        }
+
+        RadialMenuOptionBuilderLeaf<RadialMenuOptionBuilderBranch<RadialMenuBuilder>> blueprint = new RadialMenuOptionBuilderLeaf<>(
+            buildContext,
+            setMode);
+        blueprint.label(StatCollector.translateToLocal("matterblueprint.gui.blueprints"))
+            .onClicked(() -> {
+                ClientBlueprintLibrary.enterBlueprintMode();
+                Messages.SetPlaceMode.sendToServer(PlaceMode.COPYING);
+            });
+        setMode.children.add(insertAt, blueprint);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static RadialMenuOptionBuilderBranch<RadialMenuBuilder> matterBlueprint$findSetMode(
+        RadialMenuBuilder builder) {
+        String setModeLabel = StatCollector.translateToLocal("mm.gui.set_mode");
+        for (RadialMenuOptionBuilder<RadialMenuBuilder> option : builder.options) {
+            if (option instanceof RadialMenuOptionBuilderBranch && setModeLabel.equals(option.label.get())) {
+                return (RadialMenuOptionBuilderBranch<RadialMenuBuilder>) option;
+            }
+        }
+        return null;
     }
 
     private static void matterBlueprint$addBlueprintPage(RadialMenuOptionBuilderBranch<?> page, List<String> blueprints,

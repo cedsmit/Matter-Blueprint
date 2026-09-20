@@ -28,6 +28,7 @@ import cpw.mods.fml.common.registry.GameRegistry;
 public final class BlueprintPreviewRenderer {
 
     private static final short[] TINT = { 229, 242, 255, 255 };
+    private static boolean wasRendering;
 
     private BlueprintPreviewRenderer() {}
 
@@ -35,10 +36,16 @@ public final class BlueprintPreviewRenderer {
         Minecraft minecraft = Minecraft.getMinecraft();
         EntityPlayer player = minecraft.thePlayer;
         Blueprint blueprint = ClientBlueprintLibrary.getLoadedData();
-        if (player == null || blueprint == null) return;
+        if (player == null || blueprint == null) {
+            stopRendering();
+            return;
+        }
 
         ItemStack held = player.getHeldItem();
-        if (held == null || !(held.getItem() instanceof ItemMatterManipulator)) return;
+        if (!ClientBlueprintLibrary.isBlueprintModeActive(player, held)) {
+            stopRendering();
+            return;
+        }
 
         MMState state = ItemMatterManipulator.getState(held);
 
@@ -59,12 +66,16 @@ public final class BlueprintPreviewRenderer {
             : Math.min(blueprint.getSizeY() - 1, Math.max(state.config.coordA.y, state.config.coordB.y));
         int maxZ = state.config.coordA == null || state.config.coordB == null ? blueprint.getSizeZ() - 1
             : Math.min(blueprint.getSizeZ() - 1, Math.max(state.config.coordA.z, state.config.coordB.z));
-        if (minX > maxX || minY > maxY || minZ > maxZ) return;
+        if (minX > maxX || minY > maxY || minZ > maxZ) {
+            stopRendering();
+            return;
+        }
         int spanX = state.config.arraySpan == null ? 0 : state.config.arraySpan.x;
         int spanY = state.config.arraySpan == null ? 0 : state.config.arraySpan.y;
         int spanZ = state.config.arraySpan == null ? 0 : state.config.arraySpan.z;
         int hints = 0;
         RenderHints hintsRenderer = RenderHints.INSTANCE;
+        wasRendering = true;
         hintsRenderer.start();
         hintsRenderer.setDepthTest(true);
         transform.cacheRotation();
@@ -118,6 +129,12 @@ public final class BlueprintPreviewRenderer {
             transform.uncacheRotation();
             hintsRenderer.finish();
         }
+    }
+
+    private static void stopRendering() {
+        if (!wasRendering) return;
+        RenderHints.INSTANCE.reset();
+        wasRendering = false;
     }
 
     private static void drawBounds(Vector3i origin, Transform transform, float partialTicks, int minX, int minY,

@@ -6,11 +6,14 @@ import java.util.Collections;
 import java.util.List;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.ChatComponentText;
 
 import com.matterblueprint.blueprint.Blueprint;
 import com.matterblueprint.blueprint.BlueprintStore;
 import com.matterblueprint.network.BlueprintNetwork;
+import com.recursive_pineapple.matter_manipulator.common.items.manipulator.ItemMatterManipulator;
 import com.recursive_pineapple.matter_manipulator.common.networking.Messages;
 
 public final class ClientBlueprintLibrary {
@@ -18,6 +21,8 @@ public final class ClientBlueprintLibrary {
     private static String loadedBlueprint;
     private static Blueprint loadedData;
     private static boolean undoAvailable;
+    private static EntityPlayer blueprintModePlayer;
+    private static int blueprintModeSlot = -1;
 
     private ClientBlueprintLibrary() {}
 
@@ -90,6 +95,30 @@ public final class ClientBlueprintLibrary {
 
     public static void setUndoAvailable(boolean available) {
         undoAvailable = available;
+    }
+
+    public static void enterBlueprintMode() {
+        Minecraft minecraft = Minecraft.getMinecraft();
+        EntityPlayer player = minecraft.thePlayer;
+        if (player == null) return;
+
+        ItemStack held = player.getHeldItem();
+        if (held == null || !(held.getItem() instanceof ItemMatterManipulator)) return;
+
+        blueprintModePlayer = player;
+        blueprintModeSlot = player.inventory.currentItem;
+    }
+
+    public static void leaveBlueprintMode() {
+        blueprintModePlayer = null;
+        blueprintModeSlot = -1;
+    }
+
+    public static boolean isBlueprintModeActive(EntityPlayer player, ItemStack held) {
+        return player != null && player == blueprintModePlayer
+            && held != null
+            && held.getItem() instanceof ItemMatterManipulator
+            && player.inventory.currentItem == blueprintModeSlot;
     }
 
     private static File getMinecraftDirectory() {

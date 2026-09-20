@@ -40,8 +40,14 @@ build.bat "D:\Games\PrismLauncher\instances\GTNH\.minecraft"
 ## Usage
 
 Hold a Matter Manipulator and select coordinates A and B as usual. Open the
-main radial menu's **Blueprints** branch and choose **Save Blueprint**. In the
-destination world, choose **Load Blueprint**, followed by **Paste Blueprint**.
+main radial menu's **Blueprint** mode and choose **Save**. In the
+destination world, choose **Load**, followed by **Paste**.
+
+Select **Blueprint** immediately after **Geometry** in Matter Manipulator's
+**Set Mode** circle. While that mode is active, the root radial menu shows the
+blueprint actions instead of MM's normal Copying actions. Choosing another MM
+mode or switching away from the Matter Manipulator clears the blueprint
+preview.
 
 Loading automatically starts Matter Manipulator's paste-position action. The
 next right-click sets coordinate C and locks the preview there. After that, a
